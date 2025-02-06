@@ -100,13 +100,13 @@ void update_matrix(const double *pattern, PIO pio, uint sm)
     for (int i = 0; i < NUM_PIXELS; i++)
     {
         int inverted_index = NUM_PIXELS - 1 - i;
-        value = ((uint32_t)(pattern[inverted_index] * 90) << 8);
+        value = ((uint32_t)(pattern[inverted_index] * 30) << 8);
         pio_sm_put_blocking(pio, sm, value);
     }
 }
 
 // Tempo mínimo entre dois acionamentos do botão (ms)
-const uint32_t DEBOUNCE = 100;
+const uint32_t DEBOUNCE = 200;
 uint32_t ultimo_tempo_botao_a = 0;
 uint32_t ultimo_tempo_botao_b = 0;
 
@@ -143,7 +143,6 @@ int main()
     {
         sleep_ms(100);
     }
-    printf("Digite um caractere:\n");
 
     // Configuração da matriz de LEDs
     PIO pio = pio0;
@@ -183,9 +182,25 @@ int main()
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
 
     char ultimo_caractere = '\0';
+    bool mensagem_exibida = false;
 
     while (true)
-    {
+    {   
+        // Verifica se a conexão USB está ativa e se a mensagem ainda não foi exibida
+        if (stdio_usb_connected() && !mensagem_exibida)
+        {
+            printf("Digite um caractere ou número:\n");
+
+            // Exibe a mensagem inicial no display, centralizada
+            ssd1306_fill(&ssd, false);
+            ssd1306_draw_string(&ssd, "DIGITE UM", 35, 5); 
+            ssd1306_draw_string(&ssd, "CARACTERE OU", 20, 20);
+            ssd1306_draw_string(&ssd, "NUMERO", 45, 35);
+            ssd1306_send_data(&ssd);
+
+            mensagem_exibida = true;  // Marca que a mensagem já foi exibida
+        }
+
         if (button_a_pressionado)
         {
             button_a_pressionado = false;
